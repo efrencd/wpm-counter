@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-type BrowserSpeechRecognition = SpeechRecognitionConstructor;
+type BrowserSpeechRecognition = typeof window.SpeechRecognition;
 
 interface UseSpeechRecognitionResult {
   supported: boolean;
@@ -18,8 +18,8 @@ export function useSpeechRecognition(lang = 'es-ES'): UseSpeechRecognitionResult
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const Recognition = useMemo<BrowserSpeechRecognition | undefined>(() => {
-    return window.SpeechRecognition || window.webkitSpeechRecognition;
+  const Recognition = useMemo(() => {
+    return (window.SpeechRecognition || window.webkitSpeechRecognition) as BrowserSpeechRecognition | undefined;
   }, []);
 
   const supported = Boolean(Recognition);
@@ -33,15 +33,15 @@ export function useSpeechRecognition(lang = 'es-ES'): UseSpeechRecognitionResult
     recognition.continuous = true;
     recognition.interimResults = true;
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const combined = Array.from({ length: event.results.length }, (_, idx) => event.results[idx])
+    recognition.onresult = (event) => {
+      const combined = Array.from(event.results)
         .map((result) => result[0]?.transcript ?? '')
         .join(' ')
         .trim();
       setTranscript(combined);
     };
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+    recognition.onerror = (event) => {
       setError(event.error ?? 'Error de reconocimiento');
     };
 
